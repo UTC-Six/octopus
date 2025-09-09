@@ -100,33 +100,74 @@ selectedModel := selectByWeight(models)
 
 ## 快速开始
 
-### 1. 安装依赖
+### 方式一：一键启动（推荐）
+
+```bash
+# 快速启动（自动启动 Nacos + 同步配置）
+./scripts/quick-start.sh
+```
+
+### 方式二：分步启动
+
+#### 1. 安装依赖
 
 ```bash
 make deps
 ```
 
-### 2. 启动 Nacos
-
-确保 Nacos 服务正在运行（默认端口 8848）：
+#### 2. 启动 Nacos
 
 ```bash
-# 使用 Docker 启动 Nacos
-docker run -d --name nacos -p 8848:8848 -p 9848:9848 nacos/nacos-server:v2.2.0
+# 启动 Nacos 容器
+make start-nacos
+
+# 检查状态
+make status-nacos
 ```
 
-### 3. 初始化配置
-
-将示例配置推送到 Nacos：
+#### 3. 同步配置
 
 ```bash
-make init-config
+# 同步本地配置到 Nacos
+make sync-config
 ```
 
-### 4. 构建并运行示例
+#### 4. 运行示例
 
 ```bash
+# 运行示例程序
 make example
+
+# 监控配置变化
+make watch-config
+```
+
+### 常用命令
+
+```bash
+# 启动 Nacos
+make start-nacos
+
+# 停止 Nacos
+make stop-nacos
+
+# 重启 Nacos
+make restart-nacos
+
+# 查看状态
+make status-nacos
+
+# 同步配置
+make sync-config
+
+# 监控配置变化
+make watch-config
+
+# 运行示例
+make example
+
+# 清理所有
+make clean-all
 ```
 
 ## 使用示例
@@ -205,14 +246,23 @@ nacos:
 
 ### 配置管理
 
-#### 通过 Nacos 控制台管理
+#### 方式一：通过 Nacos 控制台管理
 
 1. 访问 Nacos 控制台：http://localhost:8848/nacos
 2. 用户名/密码：nacos/nacos
 3. 进入"配置管理" -> "配置列表"
 4. 找到 `chat-models` 配置项进行编辑
+5. 修改后点击"发布"即可生效
 
-#### 通过代码更新配置
+#### 方式二：通过本地文件同步
+
+1. 编辑 `configs/chat-models.json` 文件
+2. 运行同步命令：
+   ```bash
+   make sync-config
+   ```
+
+#### 方式三：通过代码更新配置
 
 ```go
 // 更新配置
@@ -222,9 +272,32 @@ newConfigs := []types.ModelConfig{
 configCenter.PublishConfig(newConfigs)
 ```
 
+#### 配置监控
+
+实时监控配置变化：
+
+```bash
+# 启动配置监控
+make watch-config
+```
+
 #### 配置热更新
 
-服务会自动监听 Nacos 配置变化，无需重启即可生效。
+- 服务会自动监听 Nacos 配置变化
+- 配置更新后无需重启服务即可生效
+- 支持通过控制台或代码两种方式更新
+
+#### 环境变量配置
+
+可以通过环境变量自定义 Nacos 连接参数：
+
+```bash
+export NACOS_SERVER=127.0.0.1:8848
+export NACOS_NAMESPACE=public
+export NACOS_GROUP=DEFAULT_GROUP
+export NACOS_DATA_ID=chat-models
+export CONFIG_FILE=configs/chat-models.json
+```
 
 ## 技术栈
 

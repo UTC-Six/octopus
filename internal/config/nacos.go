@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"sync"
-	"time"
 
 	"github.com/UTC-Six/octopus/internal/types"
 	"github.com/nacos-group/nacos-sdk-go/clients"
@@ -86,7 +85,7 @@ func (n *NacosConfigCenter) WatchConfigChanges(callback func([]types.ModelConfig
 		Group:  n.group,
 		OnChange: func(namespace, group, dataId, data string) {
 			log.Printf("Config changed: namespace=%s, group=%s, dataId=%s", namespace, group, dataId)
-			
+
 			var configs []types.ModelConfig
 			if err := json.Unmarshal([]byte(data), &configs); err != nil {
 				log.Printf("Failed to unmarshal changed config: %v", err)
