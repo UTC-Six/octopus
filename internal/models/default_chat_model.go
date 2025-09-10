@@ -1,15 +1,15 @@
 package models
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"time"
 
 	"github.com/UTC-Six/octopus/internal/types"
+	"github.com/cloudwego/eino-ext/components/model/openai"
+	"github.com/cloudwego/eino/components/model"
+	"github.com/cloudwego/eino/schema"
 )
 
 // DefaultChatModel 默认大模型实现
@@ -92,14 +92,43 @@ func (m *DefaultChatModel) IsAvailable() bool {
 }
 
 // Chat 发送聊天请求
-func (m *DefaultChatModel) Chat(ctx context.Context, messages []types.Message) (*types.ChatResponse, error) {
+func (m *DefaultChatModel) Chat(ctx context.Context, messages []*schema.Message) (*types.ChatResponse, error) {
 	if !m.IsAvailable() {
 		return &types.ChatResponse{
 			Error: "model is not available",
 		}, fmt.Errorf("model %s is not available", m.name)
 	}
 
-	// 构建请求体
+	// 初始化模型 (以openai为例)
+	cm, err := openai.NewChatModel(ctx, &openai.ChatModelConfig{
+		BaseURL: m.GetURL(),
+		APIKey:  m.GetAppKey(),
+		Model:   m.GetName(),
+	})
+	if err != nil {
+		return &types.ChatResponse{
+			Error: "failed to get valid chatModel",
+		}, fmt.Errorf("failed to get valid chatModel: %w", err)
+	}
+
+	// 生成响应
+	res, err := cm.Generate(ctx, messages, model.WithTemperature(0.8))
+	if err != nil {
+		return &types.ChatResponse{
+			Model:     m.GetName(),
+			Timestamp: time.Now(),
+			Error:     err.Error(),
+		}, nil
+	}
+
+	return &types.ChatResponse{
+		Content:   res.Content,
+		Model:     m.GetName(),
+		Timestamp: time.Now(),
+		Error:     "",
+	}, nil
+
+	/*// 构建请求体
 	requestBody := map[string]interface{}{
 		"model":    m.name,
 		"messages": messages,
@@ -114,7 +143,7 @@ func (m *DefaultChatModel) Chat(ctx context.Context, messages []types.Message) (
 	}
 
 	// 创建HTTP请求
-	req, err := http.NewRequestWithContext(ctx, "POST", m.url+"/v1/chat/completions", bytes.NewBuffer(jsonData))
+	req, err := http.NewRequestWithContext(ctx, "POST", m.url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return &types.ChatResponse{
 			Error: "failed to create request",
@@ -181,5 +210,5 @@ func (m *DefaultChatModel) Chat(ctx context.Context, messages []types.Message) (
 		Content:   response.Choices[0].Message.Content,
 		Model:     m.name,
 		Timestamp: time.Now(),
-	}, nil
+	}, nil*/
 }

@@ -3,6 +3,8 @@ module github.com/UTC-Six/octopus
 go 1.24.6
 
 require (
+	github.com/cloudwego/eino v0.4.8
+	github.com/cloudwego/eino-ext/components/model/openai v0.0.0-20250905035413-86dbae6351d5
 	github.com/nacos-group/nacos-sdk-go/v2 v2.3.3
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -37,8 +39,6 @@ require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/clbanning/mxj/v2 v2.5.5 // indirect
 	github.com/cloudwego/base64x v0.1.5 // indirect
-	github.com/cloudwego/eino v0.4.8 // indirect
-	github.com/cloudwego/eino-ext/components/model/openai v0.0.0-20250905035413-86dbae6351d5 // indirect
 	github.com/cloudwego/eino-ext/libs/acl/openai v0.0.0-20250826113018-8c6f6358d4bb // indirect
 	github.com/deckarep/golang-set v1.7.1 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect

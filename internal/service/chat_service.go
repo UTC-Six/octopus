@@ -5,6 +5,7 @@ import (
 
 	"github.com/UTC-Six/octopus/internal/router"
 	"github.com/UTC-Six/octopus/internal/types"
+	"github.com/cloudwego/eino/schema"
 )
 
 // ChatService 聊天服务
@@ -20,7 +21,7 @@ func NewChatService(router *router.DefaultModelRouter) *ChatService {
 }
 
 // Chat 发送聊天请求
-func (s *ChatService) Chat(ctx context.Context, modelName string, messages []types.Message) (*types.ChatResponse, error) {
+func (s *ChatService) Chat(ctx context.Context, modelName string, messages []*schema.Message) (*types.ChatResponse, error) {
 	var model types.ChatModel
 	var err error
 

@@ -10,6 +10,7 @@ import (
 	"github.com/UTC-Six/octopus/internal/router"
 	"github.com/UTC-Six/octopus/internal/service"
 	"github.com/UTC-Six/octopus/internal/types"
+	"github.com/cloudwego/eino/schema"
 )
 
 func main() {
@@ -41,7 +42,7 @@ func main() {
 	showAvailableModels(chatService)
 
 	// 演示自动选择模型
-	demonstrateAutoSelection(chatService)
+	//demonstrateAutoSelection(chatService)
 
 	// 演示指定模型
 	demonstrateSpecificModel(chatService)
@@ -71,14 +72,14 @@ func demonstrateAutoSelection(chatService *service.ChatService) {
 	fmt.Println("-------------------")
 
 	ctx := context.Background()
-	messages := []types.Message{
+	messages := []*schema.Message{
 		{
 			Role:    "user",
 			Content: "你好，请介绍一下自己",
 		},
 	}
 
-	response, err := chatService.Chat(ctx, "", messages)
+	response, err := chatService.Chat(ctx, "glm-4.5", messages)
 	if err != nil {
 		fmt.Printf("❌ 错误: %v\n", err)
 	} else {
@@ -102,10 +103,10 @@ func demonstrateSpecificModel(chatService *service.ChatService) {
 	fmt.Printf("使用模型: %s\n", modelName)
 
 	ctx := context.Background()
-	messages := []types.Message{
+	messages := []*schema.Message{
 		{
 			Role:    "user",
-			Content: "请简单介绍一下你的功能",
+			Content: "请全面的介绍一下你自己",
 		},
 	}
 

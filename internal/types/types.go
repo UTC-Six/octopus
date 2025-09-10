@@ -3,6 +3,8 @@ package types
 import (
 	"context"
 	"time"
+
+	"github.com/cloudwego/eino/schema"
 )
 
 // ChatModel 大模型接口
@@ -13,13 +15,7 @@ type ChatModel interface {
 	GetPriority() int
 	GetWeight() int
 	IsAvailable() bool
-	Chat(ctx context.Context, messages []Message) (*ChatResponse, error)
-}
-
-// Message 聊天消息
-type Message struct {
-	Role    string `json:"role"`    // user, assistant, system
-	Content string `json:"content"`
+	Chat(ctx context.Context, messages []*schema.Message) (*ChatResponse, error)
 }
 
 // ChatResponse 聊天响应
