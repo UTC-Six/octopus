@@ -65,7 +65,8 @@ func (m *DefaultChatModel) GetWeight() int {
 
 // IsAvailable 检查模型是否可用
 func (m *DefaultChatModel) IsAvailable() bool {
-	if !m.enabled {
+	return m.enabled
+	/*if !m.enabled {
 		return false
 	}
 
@@ -87,7 +88,7 @@ func (m *DefaultChatModel) IsAvailable() bool {
 	}
 	defer resp.Body.Close()
 
-	return resp.StatusCode == http.StatusOK
+	return resp.StatusCode == http.StatusOK*/
 }
 
 // Chat 发送聊天请求

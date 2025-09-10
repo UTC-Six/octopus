@@ -3,14 +3,16 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"sync"
 
 	"github.com/UTC-Six/octopus/internal/types"
-	"github.com/nacos-group/nacos-sdk-go/clients"
-	"github.com/nacos-group/nacos-sdk-go/clients/config_client"
-	"github.com/nacos-group/nacos-sdk-go/common/constant"
-	"github.com/nacos-group/nacos-sdk-go/vo"
+	"github.com/nacos-group/nacos-sdk-go/v2/clients"
+	"github.com/nacos-group/nacos-sdk-go/v2/clients/config_client"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/v2/vo"
+	"gopkg.in/yaml.v3"
 )
 
 // NacosConfigCenter Nacos配置中心实现
@@ -25,20 +27,83 @@ type NacosConfigCenter struct {
 
 // NacosConfig Nacos配置
 type NacosConfig struct {
-	ServerConfigs []constant.ServerConfig `yaml:"server_configs"`
-	ClientConfig  constant.ClientConfig   `yaml:"client_config"`
-	NamespaceId   string                  `yaml:"namespace_id"`
-	Group         string                  `yaml:"group"`
-	DataId        string                  `yaml:"data_id"`
+	ServerConfigs []ServerConfig `yaml:"server_configs"`
+	ClientConfig  ClientConfig   `yaml:"client_config"`
+	NamespaceId   string         `yaml:"namespace_id"`
+	Group         string         `yaml:"group"`
+	DataId        string         `yaml:"data_id"`
+}
+
+// ServerConfig 服务器配置
+type ServerConfig struct {
+	IpAddr   string `yaml:"ip_addr"`
+	Port     uint64 `yaml:"port"`
+	GrpcPort uint64 `yaml:"grpc_port"`
+}
+
+// ClientConfig 客户端配置
+type ClientConfig struct {
+	NamespaceId         string `yaml:"namespace_id"`
+	TimeoutMs           uint64 `yaml:"timeout_ms"`
+	NotLoadCacheAtStart bool   `yaml:"not_load_cache_at_start"`
+	LogDir              string `yaml:"log_dir"`
+	CacheDir            string `yaml:"cache_dir"`
+	LogLevel            string `yaml:"log_level"`
+}
+
+// Config 应用配置
+type Config struct {
+	Nacos NacosConfig `yaml:"nacos"`
+}
+
+// LoadConfig 加载配置文件
+func LoadConfig(configPath string) (*Config, error) {
+	data, err := ioutil.ReadFile(configPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read config file: %w", err)
+	}
+
+	var config Config
+	if err := yaml.Unmarshal(data, &config); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal config: %w", err)
+	}
+
+	return &config, nil
 }
 
 // NewNacosConfigCenter 创建Nacos配置中心
-func NewNacosConfigCenter(config NacosConfig) (*NacosConfigCenter, error) {
+func NewNacosConfigCenter() (*NacosConfigCenter, error) {
+	// 加载配置文件
+	config, err := LoadConfig("config.yaml")
+	if err != nil {
+		return nil, fmt.Errorf("failed to load config: %w", err)
+	}
+
+	// 转换服务器配置
+	serverConfigs := make([]constant.ServerConfig, len(config.Nacos.ServerConfigs))
+	for i, s := range config.Nacos.ServerConfigs {
+		serverConfigs[i] = constant.ServerConfig{
+			IpAddr:   s.IpAddr,
+			Port:     s.Port,
+			GrpcPort: s.GrpcPort,
+		}
+	}
+
+	// 转换客户端配置
+	clientConfig := constant.ClientConfig{
+		NamespaceId:         config.Nacos.ClientConfig.NamespaceId,
+		TimeoutMs:           config.Nacos.ClientConfig.TimeoutMs,
+		NotLoadCacheAtStart: config.Nacos.ClientConfig.NotLoadCacheAtStart,
+		LogDir:              config.Nacos.ClientConfig.LogDir,
+		CacheDir:            config.Nacos.ClientConfig.CacheDir,
+		LogLevel:            config.Nacos.ClientConfig.LogLevel,
+	}
+
 	// 创建配置客户端
 	client, err := clients.NewConfigClient(
 		vo.NacosClientParam{
-			ClientConfig:  &config.ClientConfig,
-			ServerConfigs: config.ServerConfigs,
+			ClientConfig:  &clientConfig,
+			ServerConfigs: serverConfigs,
 		},
 	)
 	if err != nil {
@@ -47,9 +112,9 @@ func NewNacosConfigCenter(config NacosConfig) (*NacosConfigCenter, error) {
 
 	center := &NacosConfigCenter{
 		client:      client,
-		namespaceId: config.NamespaceId,
-		group:       config.Group,
-		dataId:      config.DataId,
+		namespaceId: config.Nacos.NamespaceId,
+		group:       config.Nacos.Group,
+		dataId:      config.Nacos.DataId,
 		callbacks:   make([]func([]types.ModelConfig), 0),
 	}
 

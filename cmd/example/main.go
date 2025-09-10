@@ -10,10 +10,12 @@ import (
 	"github.com/UTC-Six/octopus/internal/router"
 	"github.com/UTC-Six/octopus/internal/service"
 	"github.com/UTC-Six/octopus/internal/types"
-	"github.com/nacos-group/nacos-sdk-go/common/constant"
 )
 
 func main() {
+	fmt.Println("🚀 大模型路由系统")
+	fmt.Println("==================")
+
 	// 创建 Nacos 配置中心
 	configCenter, err := createNacosConfigCenter()
 	if err != nil {
@@ -32,87 +34,91 @@ func main() {
 	// 创建聊天服务
 	chatService := service.NewChatService(modelRouter)
 
-	// 等待一下让配置加载完成
+	// 等待配置加载完成
 	time.Sleep(1 * time.Second)
 
-	// 测试获取模型列表
-	fmt.Println("=== Available Models ===")
-	models := chatService.GetAvailableModels()
-	for _, model := range models {
-		status := "❌"
-		if model.IsAvailable() {
-			status = "✅"
-		}
-		fmt.Printf("%s %s (priority: %d, weight: %d)\n",
-			status, model.GetName(), model.GetPriority(), model.GetWeight())
-	}
+	// 显示可用模型
+	showAvailableModels(chatService)
 
-	// 测试自动选择模型
-	fmt.Println("\n=== Test Auto Selection ===")
-	testAutoSelection(chatService)
+	// 演示自动选择模型
+	demonstrateAutoSelection(chatService)
 
-	// 测试指定模型
-	fmt.Println("\n=== Test Specific Model ===")
-	testSpecificModel(chatService, "gpt-3.5-turbo")
-
-	// 测试不存在的模型
-	fmt.Println("\n=== Test Non-existent Model ===")
-	testSpecificModel(chatService, "non-existent-model")
+	// 演示指定模型
+	demonstrateSpecificModel(chatService)
 }
 
-func testAutoSelection(chatService *service.ChatService) {
+func showAvailableModels(chatService *service.ChatService) {
+	fmt.Println("\n📋 可用模型列表:")
+	fmt.Println("----------------")
+	models := chatService.GetAvailableModels()
+	if len(models) == 0 {
+		fmt.Println("❌ 没有可用的模型")
+		return
+	}
+
+	for _, model := range models {
+		status := "❌ 禁用"
+		if model.IsAvailable() {
+			status = "✅ 启用"
+		}
+		fmt.Printf("%s %s (优先级: %d, 权重: %d)\n",
+			status, model.GetName(), model.GetPriority(), model.GetWeight())
+	}
+}
+
+func demonstrateAutoSelection(chatService *service.ChatService) {
+	fmt.Println("\n🎯 自动选择模型演示:")
+	fmt.Println("-------------------")
+
 	ctx := context.Background()
 	messages := []types.Message{
 		{
 			Role:    "user",
-			Content: "Hello, how are you?",
+			Content: "你好，请介绍一下自己",
 		},
 	}
 
 	response, err := chatService.Chat(ctx, "", messages)
 	if err != nil {
-		fmt.Printf("Error: %v\n", err)
+		fmt.Printf("❌ 错误: %v\n", err)
 	} else {
-		fmt.Printf("Model: %s\n", response.Model)
-		fmt.Printf("Response: %s\n", response.Content)
+		fmt.Printf("✅ 选择的模型: %s\n", response.Model)
+		fmt.Printf("💬 回复: %s\n", response.Content)
 	}
 }
 
-func testSpecificModel(chatService *service.ChatService, modelName string) {
+func demonstrateSpecificModel(chatService *service.ChatService) {
+	fmt.Println("\n🎯 指定模型演示:")
+	fmt.Println("---------------")
+
+	// 获取第一个可用模型进行演示
+	models := chatService.GetAvailableModels()
+	if len(models) == 0 {
+		fmt.Println("❌ 没有可用的模型")
+		return
+	}
+
+	modelName := models[0].GetName()
+	fmt.Printf("使用模型: %s\n", modelName)
+
 	ctx := context.Background()
 	messages := []types.Message{
 		{
 			Role:    "user",
-			Content: "What is the capital of France?",
+			Content: "请简单介绍一下你的功能",
 		},
 	}
 
 	response, err := chatService.Chat(ctx, modelName, messages)
 	if err != nil {
-		fmt.Printf("Error: %v\n", err)
+		fmt.Printf("❌ 错误: %v\n", err)
 	} else {
-		fmt.Printf("Model: %s\n", response.Model)
-		fmt.Printf("Response: %s\n", response.Content)
+		fmt.Printf("✅ 模型: %s\n", response.Model)
+		fmt.Printf("💬 回复: %s\n", response.Content)
 	}
 }
 
 // createNacosConfigCenter 创建 Nacos 配置中心
 func createNacosConfigCenter() (types.ConfigCenter, error) {
-	nacosConfig := config.NacosConfig{
-		ServerConfigs: []constant.ServerConfig{
-			{
-				IpAddr: "127.0.0.1",
-				Port:   8848,
-			},
-		},
-		ClientConfig: constant.ClientConfig{
-			NamespaceId: "public",
-			TimeoutMs:   5000,
-		},
-		NamespaceId: "public",
-		Group:       "DEFAULT_GROUP",
-		DataId:      "chat-models",
-	}
-
-	return config.NewNacosConfigCenter(nacosConfig)
+	return config.NewNacosConfigCenter()
 }
