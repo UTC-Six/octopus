@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"time"
 
@@ -11,11 +10,12 @@ import (
 	"github.com/UTC-Six/octopus/internal/service"
 	"github.com/UTC-Six/octopus/internal/types"
 	"github.com/cloudwego/eino/schema"
+	"github.com/zeromicro/go-zero/core/logx"
 )
 
 func main() {
-	fmt.Println("🚀 大模型路由系统")
-	fmt.Println("==================")
+	logx.Info("🚀 大模型路由系统")
+	logx.Info("==================")
 
 	// 创建 Nacos 配置中心
 	configCenter, err := createNacosConfigCenter()
@@ -49,11 +49,11 @@ func main() {
 }
 
 func showAvailableModels(chatService *service.ChatService) {
-	fmt.Println("\n📋 可用模型列表:")
-	fmt.Println("----------------")
+	logx.Info("\n📋 可用模型列表:")
+	logx.Info("----------------")
 	models := chatService.GetAvailableModels()
 	if len(models) == 0 {
-		fmt.Println("❌ 没有可用的模型")
+		logx.Error("❌ 没有可用的模型")
 		return
 	}
 
@@ -62,14 +62,14 @@ func showAvailableModels(chatService *service.ChatService) {
 		if model.IsAvailable() {
 			status = "✅ 启用"
 		}
-		fmt.Printf("%s %s (优先级: %d, 权重: %d)\n",
+		logx.Infof("%s %s (优先级: %d, 权重: %d)",
 			status, model.GetName(), model.GetPriority(), model.GetWeight())
 	}
 }
 
 func demonstrateAutoSelection(chatService *service.ChatService) {
-	fmt.Println("\n🎯 自动选择模型演示:")
-	fmt.Println("-------------------")
+	logx.Info("\n🎯 自动选择模型演示:")
+	logx.Info("-------------------")
 
 	ctx := context.Background()
 	messages := []*schema.Message{
@@ -81,26 +81,26 @@ func demonstrateAutoSelection(chatService *service.ChatService) {
 
 	response, err := chatService.Chat(ctx, "glm-4.5", messages)
 	if err != nil {
-		fmt.Printf("❌ 错误: %v\n", err)
+		logx.Errorf("❌ 错误: %v", err)
 	} else {
-		fmt.Printf("✅ 选择的模型: %s\n", response.Model)
-		fmt.Printf("💬 回复: %s\n", response.Content)
+		logx.Infof("✅ 选择的模型: %s", response.Model)
+		logx.Infof("💬 回复: %s", response.Content)
 	}
 }
 
 func demonstrateSpecificModel(chatService *service.ChatService) {
-	fmt.Println("\n🎯 指定模型演示:")
-	fmt.Println("---------------")
+	logx.Info("\n🎯 指定模型演示:")
+	logx.Info("---------------")
 
 	// 获取第一个可用模型进行演示
 	models := chatService.GetAvailableModels()
 	if len(models) == 0 {
-		fmt.Println("❌ 没有可用的模型")
+		logx.Error("❌ 没有可用的模型")
 		return
 	}
 
 	modelName := models[0].GetName()
-	fmt.Printf("使用模型: %s\n", modelName)
+	logx.Infof("使用模型: %s", modelName)
 
 	ctx := context.Background()
 	messages := []*schema.Message{
@@ -112,10 +112,10 @@ func demonstrateSpecificModel(chatService *service.ChatService) {
 
 	response, err := chatService.Chat(ctx, modelName, messages)
 	if err != nil {
-		fmt.Printf("❌ 错误: %v\n", err)
+		logx.Errorf("❌ 错误: %v", err)
 	} else {
-		fmt.Printf("✅ 模型: %s\n", response.Model)
-		fmt.Printf("💬 回复: %s\n", response.Content)
+		logx.Infof("✅ 模型: %s", response.Model)
+		logx.Infof("💬 回复: %s", response.Content)
 	}
 }
 

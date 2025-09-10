@@ -2,13 +2,13 @@ package router
 
 import (
 	"fmt"
-	"log"
 	"math/rand"
 	"sort"
 	"sync"
 
 	"github.com/UTC-Six/octopus/internal/models"
 	"github.com/UTC-Six/octopus/internal/types"
+	"github.com/zeromicro/go-zero/core/logx"
 )
 
 // DefaultModelRouter 默认大模型路由器
@@ -45,7 +45,7 @@ func (r *DefaultModelRouter) Start() error {
 		return fmt.Errorf("failed to watch config changes: %w", err)
 	}
 
-	log.Println("Model router started successfully")
+	logx.Info("Model router started successfully")
 	return nil
 }
 
@@ -57,9 +57,9 @@ func (r *DefaultModelRouter) Stop() error {
 
 // onConfigChange 配置变化回调
 func (r *DefaultModelRouter) onConfigChange(configs []types.ModelConfig) {
-	log.Printf("Config changed, updating %d models", len(configs))
+	logx.Infof("Config changed, updating %d models", len(configs))
 	if err := r.UpdateConfigs(configs); err != nil {
-		log.Printf("Failed to update configs: %v", err)
+		logx.Errorf("Failed to update configs: %v", err)
 	}
 }
 
@@ -84,7 +84,7 @@ func (r *DefaultModelRouter) UpdateConfigs(configs []types.ModelConfig) error {
 
 		model := models.NewDefaultChatModel(config)
 		r.models[config.Name] = model
-		log.Printf("Registered model: %s (priority: %d, weight: %d)",
+		logx.Infof("Registered model: %s (priority: %d, weight: %d)",
 			config.Name, config.Priority, config.Weight)
 	}
 

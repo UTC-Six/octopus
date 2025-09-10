@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"sync"
 
 	"github.com/UTC-Six/octopus/internal/types"
@@ -12,6 +11,7 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/config_client"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/v2/vo"
+	"github.com/zeromicro/go-zero/core/logx"
 	"gopkg.in/yaml.v3"
 )
 
@@ -149,11 +149,11 @@ func (n *NacosConfigCenter) WatchConfigChanges(callback func([]types.ModelConfig
 		DataId: n.dataId,
 		Group:  n.group,
 		OnChange: func(namespace, group, dataId, data string) {
-			log.Printf("Config changed: namespace=%s, group=%s, dataId=%s", namespace, group, dataId)
+			logx.Infof("Config changed: namespace=%s, group=%s, dataId=%s", namespace, group, dataId)
 
 			var configs []types.ModelConfig
 			if err := json.Unmarshal([]byte(data), &configs); err != nil {
-				log.Printf("Failed to unmarshal changed config: %v", err)
+				logx.Errorf("Failed to unmarshal changed config: %v", err)
 				return
 			}
 
