@@ -73,8 +73,11 @@ func LoadConfig(configPath string) (*Config, error) {
 
 // NewNacosConfigCenter 创建Nacos配置中心
 func NewNacosConfigCenter() (*NacosConfigCenter, error) {
-	// 加载配置文件
-	config, err := LoadConfig("config.yaml")
+	// 加载配置文件（统一使用 etc/config.yaml）。
+	// 这里仅包含访问 Nacos 所需的连接信息（服务端 + 客户端 + 指定的 dataId/group）。
+	// 应用的业务模型配置（模型列表/优先级/权重等）实际存放在 Nacos 的配置内容中，
+	// 并不直接写入本地 YAML；本地 YAML 只是“连接 Nacos 的引导配置”。
+	config, err := LoadConfig("etc/config.yaml")
 	if err != nil {
 		return nil, fmt.Errorf("failed to load config: %w", err)
 	}
@@ -123,6 +126,8 @@ func NewNacosConfigCenter() (*NacosConfigCenter, error) {
 
 // GetModelConfigs 获取模型配置
 func (n *NacosConfigCenter) GetModelConfigs() ([]types.ModelConfig, error) {
+	// 从 Nacos 拉取最新配置文本，然后 JSON 反序列化为业务模型配置。
+	// 如果拉取或解析失败，则返回错误给上层，由上层决定是否启动或如何处理。
 	content, err := n.client.GetConfig(vo.ConfigParam{
 		DataId: n.dataId,
 		Group:  n.group,
@@ -151,12 +156,16 @@ func (n *NacosConfigCenter) WatchConfigChanges(callback func([]types.ModelConfig
 		OnChange: func(namespace, group, dataId, data string) {
 			logx.Infof("Config changed: namespace=%s, group=%s, dataId=%s", namespace, group, dataId)
 
+			// 热更新关键路径：收到变更后，先尝试把新内容反序列化。
+			// 如果解析失败，直接返回，不下发回调，这样上层不会应用坏配置，
+			// 也就达到了“更新失败时保持旧配置”的目的。
 			var configs []types.ModelConfig
 			if err := json.Unmarshal([]byte(data), &configs); err != nil {
 				logx.Errorf("Failed to unmarshal changed config: %v", err)
 				return
 			}
 
+			// 解析成功才广播给订阅者（例如模型路由器）。订阅者再决定如何原子地替换内存中的配置。
 			n.mu.RLock()
 			for _, cb := range n.callbacks {
 				go cb(configs)

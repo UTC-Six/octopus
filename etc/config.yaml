@@ -1,16 +1,31 @@
-# Nacos 配置
 nacos:
   server_configs:
     - ip_addr: "82.157.212.7"
       port: 8848
+      grpc_port: 9848
   client_config:
-    namespace_id: "public"
+    namespace_id: "18b01bb8-ac70-4527-89d0-01079f30ca09"
     timeout_ms: 5000
+    not_load_cache_at_start: true
+    log_dir: "/tmp/nacos/log"
+    cache_dir: "/tmp/nacos/cache"
+    log_level: "debug"
   namespace_id: "18b01bb8-ac70-4527-89d0-01079f30ca09"
   group: "DEFAULT_GROUP"
   data_id: "chat-models"
 
-# 服务器配置
-server:
-  port: "8080"
-  host: "43.137.73.8"
+#  服务组配置
+#  service_groups:
+#    # 第一组服务（共享相同的URL和AppKey）
+#    - url: "https://ark.cn-beijing.volces.com/api/v3"
+#      app_key: "39916561-ff4e-42c3-adc3-efb164dabe1b"
+#      services:
+#        - name: "Ark"
+#          enabled: false
+#
+#  第二组服务（使用另一套URL和AppKey）
+#  - url: "https://open.bigmodel.cn/api/paas/v4"
+#    app_key: "8ebb6a00993c4a7a99be11990af9858c.QWTswoyOF7AFn52B"
+#    services:
+#      - name: "glm-4.5"
+#        enabled: true

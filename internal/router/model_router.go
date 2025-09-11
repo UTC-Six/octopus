@@ -13,6 +13,8 @@ import (
 
 // DefaultModelRouter 默认大模型路由器
 type DefaultModelRouter struct {
+	// models 保存当前“生效”的模型实例集合。通过互斥锁保护，
+	// UpdateConfigs 采用“整体替换”的方式原子更新，避免部分更新导致的不一致。
 	models       map[string]types.ChatModel // modelName -> ChatModel
 	configCenter types.ConfigCenter
 	mu           sync.RWMutex
@@ -30,7 +32,7 @@ func NewDefaultModelRouter(configCenter types.ConfigCenter) *DefaultModelRouter 
 
 // Start 启动路由器
 func (r *DefaultModelRouter) Start() error {
-	// 初始化配置
+	// 初始化配置：从配置中心拉取一次完整模型配置，构建内存路由表。
 	configs, err := r.configCenter.GetModelConfigs()
 	if err != nil {
 		return fmt.Errorf("failed to get initial configs: %w", err)
@@ -40,7 +42,8 @@ func (r *DefaultModelRouter) Start() error {
 		return fmt.Errorf("failed to update initial configs: %w", err)
 	}
 
-	// 监听配置变化
+	// 监听配置变化：收到变更后调用 onConfigChange。
+	// onConfigChange 会先尝试构建新的模型集合并整体替换；若失败则保持旧配置不变。
 	if err := r.configCenter.WatchConfigChanges(r.onConfigChange); err != nil {
 		return fmt.Errorf("failed to watch config changes: %w", err)
 	}
@@ -68,8 +71,8 @@ func (r *DefaultModelRouter) UpdateConfigs(configs []types.ModelConfig) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	// 清空现有模型
-	r.models = make(map[string]types.ChatModel)
+	// 用新的临时表承接并验证配置，成功后整体替换，失败则保持旧配置
+	newModels := make(map[string]types.ChatModel)
 
 	// 按优先级排序（优先级越小越高）
 	sort.Slice(configs, func(i, j int) bool {
@@ -83,11 +86,13 @@ func (r *DefaultModelRouter) UpdateConfigs(configs []types.ModelConfig) error {
 		}
 
 		model := models.NewDefaultChatModel(config)
-		r.models[config.Name] = model
+		newModels[config.Name] = model
 		logx.Infof("Registered model: %s (priority: %d, weight: %d)",
 			config.Name, config.Priority, config.Weight)
 	}
 
+	// 一次性替换
+	r.models = newModels
 	return nil
 }
 
